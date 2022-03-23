@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+  <!-- Basic Page Needs–– -->
+  <meta charset="utf-8">
+  <title>Assignment 2</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.2/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/customize.css">
+
+  </style>
+
+  </style>
+  <!-- D3 -->
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="img\Personal Emblem-Signature.png">
+
+</head>
+
+<body>
+
+  <div class="container one-bottom" style="margin-top: 50px">
+    <div class="ten columns">
+      <h2>Mobility on Demand Systems: Data-Driven Analysis, Simulation, Visualization</h2>
+      <p>
+        ARCH 6306/6050, DSBA 6010, ITIS 8010/6010: Wednesdays 6pm-8:30pm, Taught Online
+        <br>
+        Dr. Dimitris Papanikolaou | dpapanik@uncc.edu | Urban Synergetics Lab | https://urbansynergeticslab.net
+      </p>
+    </div>
+    <div class="two columns">
+      <a href="https://urbansynergeticslab.net/"><img class="scale-with-grid" src="img/LabLogo_dark_cropped.png"></a>
+    </div>
+  </div>
+
+
+  <div class="container one-bottom" style="margin-top: 50px">
+    <div class="twelve columns">
+      <h3>Assignment 2 - The Los Angeles Metro Bike Share System</h3>
+      <h5>Launched in July of 2017 with 65 stations and 1000 in Downtown Los Angeles, Metro Bike Share now utilizes a fleet of about 1400 bikes and at least 93 active stations at any time to provide 24/7 service to the regions of Downtown Los Angeles, Venice, and the Port of Los Angeles. In July of 2017, the service was also extended into Pasadena, but that branch was canceled in September of 2018. The system in a collaboration between the Los Angeles County Metropolitan Transportation Authority (Metro) and the City of Los Angeles as program partners with Bicycle Transit Systems being hired as the Operator company. Metro Bike Share is the first bike share system in the U.S. to be integrated as part of the city's existing public transit system. While other cities' bike share systems are usually operated by the municipal transportation department or an independent group, L.A.'s bike share is overseen by Metro and allows riders to purchase rides using the same regional TAP card that is used on Metro's buses and trains.</h5>
+    </div>
+  </div>
+
+  
+  <div class="container one-bottom" >
+    <div class="row">
+      <img class="six columns scale-with-grid quarter-bottom-rel" src="img/LA Seal.png">
+      <img class="six columns scale-with-grid quarter-bottom-rel" src="img/metro logo.png">
+    </div>
+ </div>
+
+  <div class="container one-bottom" >
+    <div class="twelve columns">
+      <h3>Trips in September of 2021</h3>
+      <h5>
+        Shown below are the 17,887 recorded trips taken by users of the LA Metro Bikeshare in September
+      </h5>
+    </div>
+  </div>
+
+<div class="container">
+	<div id= "chord_01" class="container">
+		
+	</div>
+</div>
+
+<script>
+var mydata1;
+var mymatrix;
+var mytrips;
+	d3.json("metro-trips-2021-sept.json", function(data) {
+		mydata1 = data
+		console.log(data);
+
+
+		// STEP 1: Setup
+		var nTrips ;
+		var nStations = 255;
+
+		var margin = 1;
+		var width = 1000;
+
+		var xPos = margin;
+		var yPos = margin;
+
+		var thickness = 10;
+		var diameter = width - 2*margin;
+		var outerRadius = diameter / 2;
+		var innerRadius = outerRadius - thickness;
+
+		var color = d3.scale.linear()
+		.domain([0, nStations])
+		.range([d3.rgb(0,255,0), d3.rgb(0,0,0)]);
+
+
+		// STEP 2: Create/Get Data and OD Matrix
+		var tripData = createTripData(nTrips, nStations);
+		var stationData = createStationData(nStations);
+		var od_matrix = createMatrix(tripData, stationData);
+
+
+
+		// STEP 3: Create Chord Layout
+		var chordLayout = d3.layout.chord()
+		.matrix(od_matrix)
+		.padding(0.005)
+		.sortGroups(d3.descending); // You can also pass custom sorting functions that compare two objects like function(a,b){...}
+		// About d3.layout.chord():
+		// d3.layout.chord() is a D3 layout object. Read about D3 Layouts here: https://d3indepth.com/layouts/ and about Chord Layout here: https://d3-wiki.readthedocs.io/zh_CN/master/Chord-Layout/
+		// Once the Chord Layout is being assigned an OD matrix ( d3.layout.chord().matrix(od_matrix) ), it can return groups and chords arrays as follows:
+		// function chordLayout.groups() returns the groups
+		// function chordLayout.chords() returns the chords
+
+
+		// STEP 4: Create SVG Shape Generators for arcs and chords
+		var arc = d3.svg.arc()
+		.innerRadius(innerRadius)
+		.outerRadius(outerRadius);
+		// About d3.svg.arc():
+		// d3.svg.arc() is an SVG Shape Generator. Read more about SVG Shape Generators here: https://d3indepth.com/shapes/
+		// d3.svg.arc() takes a group object as an input and returns its path
+		// To define an arc SVG Shape Generator you first need to define the inner and outer radii
+		// function chordLayout.groups() returns an array with all groups (e.g. arc sectors)
+		// each group object contains a start angle, an end angle, an index number, and a value.
+		// for example, arc(chordLayout.groups()[2]) returns the path of the third group
+
+
+		var chord = d3.svg.chord()
+		.radius(innerRadius - 5);
+		// About d3.svg.chord():
+		// d3.svg.chord() is also an SVG Shape Generator. It takes a chord object as an input and returns its path
+		// To define a chord SVG Shape Generator you first need to define the radious
+		// chordLayout.chords() returns an array with all chords
+		// each chord object consists of a source and a target, and each of the source and target is a segment of a group with its own start angle and end angle
+		// for example, chord(chordLayout.chords()[12]) returns the path of the 13th chord
+
+
+		// STEP 5: Create the SVG and an empty group "g" to contain the Arc and Chord Shapes that you will be generating
+		var svgGroup = d3.select("#chord_01").append("svg")
+		.attr("width", 1000)
+		.attr("height", 1000)
+		.append("g")
+		.attr("transform", "translate(" + (xPos + outerRadius) + "," + (yPos + outerRadius) + ")");
+		// Create an SVG element in the body of the html page, and define its width and height
+		// Then, append an empty "group" (g) inside it, and determine its X,Y origin
+		// You need this g element in order to start embedding paths inside it and consider them as a single object.
+
+
+		// STEP 6: Create and/or update the chord graph by passing the arc data (called "groups") and the chord data. See more info and substeps in the update() function description below
+		update(chordLayout.groups(), chordLayout.chords());
+
+
+		/********************/
+		/********************/
+		/***** FUNCTIONS ****/
+		/********************/
+		/********************/
+
+
+
+
+
+
+		function createTripData(nTrips, nStations){
+			var trips = [];
+			data.forEach(function(tripping){
+				var origin_index = +tripping.start_station;
+				var destination_index = +tripping.end_station;
+				trips.push({
+					start_station: origin_index,
+					end_station: destination_index
+				})});
+mytrips=trips;
+			return trips;}
+
+		
+
+		function createStationData(nStations){
+			var stations=[];
+			for(var i=0; i<nStations; i++){
+				stations.push({
+					name: i
+				})
+			}
+			return stations;
+		}
+
+		//use later
+
+		function createMatrix(tripData, stationData){
+			var indexByNameTrip = d3.map();
+			var nameByIndexTrip = d3.map();
+			var n = 0;
+			tripData.forEach(function(d) {
+				if (!indexByNameTrip.has(d.start_station)) {
+					nameByIndexTrip.set(n, d.start_station);
+					indexByNameTrip.set(d.start_station, n++);
+				}
+
+			});
+
+			var indexByNameStation = d3.map();
+			var nameByIndexStation = d3.map();
+			var j = 0;
+			stationData.forEach(function(d) {
+				if (!indexByNameStation.has(d.name)) {
+					nameByIndexStation.set(j, d.name);
+					indexByNameStation.set(d.name, j++);
+				}
+			});
+
+
+			//Create the OD matrix
+			var od_matrix = [];
+			tripData.forEach(function(d) {
+				var  startStationIndex = indexByNameTrip.get(d.start_station);
+				var  endStationIndex = indexByNameTrip.get(d.end_station);
+				if (!od_matrix[startStationIndex]) {
+					od_matrix[startStationIndex] = [];
+					for (var i = 0; i < n; i++) {
+						od_matrix[startStationIndex][i] = 0;
+					}
+				}
+				od_matrix[startStationIndex][endStationIndex]++;;
+			});
+			return od_matrix;
+		}
+		mymatrix = od_matrix
+		function update(arc_data, chord_data){
+
+			// Arcs
+			// Step 1: Bind data to arcs
+			var arcs = svgGroup
+			.selectAll(".arc")
+			.data(arc_data);
+
+			// Step 2: Append any new arcs if needed
+			arcs
+			.enter()
+			.append("path")
+			.attr("class", "arc");
+
+			// Step 3: Remove any excessive arcs if needed
+			arcs
+			.exit()
+			.remove();
+
+			// Step 4: Modify the arcs based on their bound data
+			arcs
+			.attr("id", function(d, i) { return "arc_" + i; })
+			.style("fill", function(d) { return color(d.index); })
+			.style("stroke", d3.rgb(0,0,0))
+			.style("stroke-width", 1)
+			.attr("d", function(d) { return arc(d)});
+
+
+			// Chords
+			// STEP 1: Bind data to chords
+			var chords = svgGroup
+			.selectAll(".chord")
+				.data(chord_data);
+
+			// Step 2: Append any new chords if needed
+			chords
+				.enter()
+				.append("path")
+				.attr("class", "chord");
+
+			// Step 3: Remove any excessive chorsa if needed
+			chords
+				.exit()
+				.remove();
+
+			// Step 4: Modify the chords based on their bound data
+			chords
+				.attr("id", function(d, i) { return "chord_" + i; })
+				.style("fill", d3.rgb(180,180,180))
+				.style("stroke", d3.rgb(180,180,180).darker(3))
+				.style("opacity", 0.5)
+				.attr("d", function(d) { return chord(d)} )
+
+
+			//TickGroups
+			// Step 1: Bind data to tick groups
+			var tickGroups = svgGroup
+			.selectAll(".tickGroups")
+			.data(arc_data);
+
+			// Step 2: Append any new tick groups if needed
+			tickGroups
+			.enter()
+			.append("g")
+			.attr("class", "tickGroups");
+
+			// Step 3: Remove any excessive tick groups if needed
+			tickGroups
+			.exit()
+			.remove();
+
+
+			//Ticks
+			// Step 1: Bind data
+			var ticks = tickGroups
+			.selectAll("g")
+			.data(groupTicks);
+
+			// Step 2: Append any new elements if needed
+			// SubStep 2.1: Append any new ticks if needed
+			var tick = ticks
+			.enter()
+			.append("g");
+
+			// SubStep 2.2: Within each tick append any new lines if needed
+			tick
+			.append("line")
+			.attr("x1", 1)
+			.attr("y1", 0)
+			.attr("x2", 10)
+			.attr("y2", 0)
+			.style("stroke", "#000");
+
+			// SubStep 2.3: Within each tick append any new text if needed
+			tick
+			.append("text")
+			.attr("x", 15)
+			.attr("font-size", "11px")
+			.attr("dy", ".35em");
+
+
+			// Step 3: Remove any excessive elements if needed
+			ticks
+			.exit()
+			.remove();
+
+
+			// Step 4: Modify elements based on their bound data
+			ticks
+			.attr("transform", function(d) {
+				return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+				+ "translate(" + (outerRadius + 10) + ",0)";
+			});
+
+			ticks
+			.selectAll("text")
+			.attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180)translate(-30)" : null; })
+			.style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+			.text(function(d) { return d.label; });
+
+
+		}
+/*
+
+		// Returns an array of tick angles and labels, given a group.
+		function groupTicks(d,i) {
+			var k = (d.endAngle - d.startAngle) / (d.value);
+			return d3.range(0, d.value,1).map(function(v, i) {
+				return {
+					angle: v * k + d.startAngle,
+					label: i % 5 ? null : v  + "%"
+				};
+			});
+		}
+*/
+		
+
+
+
+		function redraw(){
+			tripData = createTripData(nTrips, nStations);
+			stationData = createStationData(nStations);
+			od_matrix = createMatrix(tripData, stationData);
+
+			chordLayout
+			.matrix(od_matrix)
+			.sortGroups(d3.descending);
+
+			update(chordLayout.groups(), chordLayout.chords());
+		}
+});
+</script>
+
+<div class="container one-bottom" style="margin-top: 50px">
+    <div class="twelve columns">
+      <h3>L.A. Metro use in September, 2021</h3>
+      <h5>As a snapshot into how the Metro bike Share system is used, trips that occurred in September of 2021 are displayed above in a chord driagram. There were 17,887 trips recorded that lasted longer than 1 minute (as those trips were removed from the published list) or were not considered for the purpose of servicing and test trips (as these were removed from the list as well) in which a bike was taken from, and returned to, one of the 205 stations claiming to be "active" at any time during the month. This creates an interesting representation of the effect that their policy of "at least 93 active stations at any one time" has on trip concentrations due to the possibility of a station being open in the morning, but closed by the end of the same day. This only seems to be made possible here by the conditon that the Metro Bike Share system is treated as equivalent to the bus and train systems that Metro also manages and provides to the city.</h5>
+    </div>
+  </div>
+
+<div class="container one-bottom" >
+  <img class="twelve columns" src="img/station map.png">
+ </div>
+ 
+  <div class="container one-bottom" >
+    <h2>Team & Contributions</h2>
+    <h3>David Knode</h3>
+    <h5>David Knode contributed to all maps, texts, and imagry choice</h5>
+   </div>
+</body>
+</html>
